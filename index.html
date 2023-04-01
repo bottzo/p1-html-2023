@@ -1,27 +1,155 @@
 <!-- first html page about parallel programing-->
 <!DOCTYPE html>
-<html lang="zh-Hans">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="我的第一网页" />
+    <meta name="description" content="TFG parallel game programming" />
     <meta name="keywords" content="educational, programming" />
-    <title>Parallel programming</title>
+    <title>Parallel game programming</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <nav></nav>
     <article>
       <header>
-        <h1>这是我的第一网页</h1>
         <section>
+          <h1>Parallel game programming</h1>
+
           <h2>开始</h2>
           你到这里让我快乐<br />
           我们一起开始
         </section>
       </header>
       <main>
+        <section>
+          <h2>Summary</h2>
+          <p>
+            On this TFG I wanted to find out if parallel programing is and will
+            be used to develop and optimize games. We have this impression
+            because of the fact that nowadays processors improve its power not
+            raising the processing speed but raising the processing units. At
+            the end of the TFG through the development of a windows platform
+            layer we found out that modern low-level APIs give a lot of options
+            to use parallel programming in the form of multithreading of
+            rendering tasks, using SIMD instructions and having the compute
+            pipeline to perform GPUGP tasks. We also found out why the GPU
+            outperforms the CPU at parallel algorithm processing and how we can
+            optimize GPU work focusing mainly on coalesced memory access and
+            memory throughput but also measuring the occupancy and concurrency.
+          </p>
+        </section>
+        <section>
+          <h2>Introduction</h2>
+          <h3>Motivation</h3>
+          <p>
+            I have already programmed a couple of game engines but on those I
+            just limited myself to put a bunch of open source libraries together
+            to make them work without optimizing much or knowing how things are
+            working underneath on the platform specific level. Therefore, this
+            TFG is an excuse to learn low-level programing using operating
+            system APIs and general purpose computing on graphics cards (GPUGP)
+            in order to optimize programs on a platform specific level. I think
+            that understanding how things work on such low level will make me a
+            better programmer because I will be able to design better code and
+            spot possible platform specific optimizations even when working with
+            higher level languages.
+          </p>
+          <p>
+            Also I think that it is important to learn parallel programing
+            because the new hardware every time dedicates more transistors to
+            make more processing units without increasing the instruction
+            processing speed so single thread programs will not be able to take
+            advantage of this new hardware and improve much in performance.
+          </p>
+          <h3>Formulating the problem</h3>
+          <p>
+            Nowadays, new CPUs and GPUs improve its power not raising the
+            instruction processing speed (raising clock frequency) but raising
+            the number of processing units. Therefore, to take advantage of the
+            new hardware in order to improve performance we need to use a
+            multithreaded program. Nevertheless, multithreaded programing adds
+            some extra complexity because threads of the same program share
+            address space and resources like memory. In consequence, we need to
+            synchronize and manage access to memory to avoid problems like race
+            conditions where two or more threads are reading from one memory
+            location while at the same time other threads are writing to the
+            same memory location. Additionally, this synchronization needs to be
+            implemented correctly to avoid more problems like deadlocks where a
+            program can’t continue execution because all threads are blocked
+            waiting one another. Furthermore, another problem we can have with
+            bad synchronization is to actually make the program slower than it
+            originally would be with a single thread because of overhead on
+            thread code generation, a lot of context switches between the
+            threads, blocked threads with bad synchronization… This extra
+            complexity generated when troubleshooting these problems makes the
+            program development slower and more difficult to program, debug and
+            profile. Accordingly, I want to see if multithreading is enforced by
+            modern APIs as a possible optimization and how.
+          </p>
+          <p>
+            Moreover, threads are not the only way to parallelize a program.
+            CPUs have specific instructions extensions that contain specific
+            instructions targeting specific tasks. One of these instruction sets
+            are the single instruction multiple data(SIMD) vector instructions
+            that enable to perform the same instruction like for example an
+            addition to multiple data at the same time effectively augmenting
+            the throughput of the CPU.For example, we can perform 8 addition
+            instructions on 16 memory locations or we can issue just one
+            instruction that does this same addition but with 2 arrays of 8
+            entries. Using these instructions can improve the performance of a
+            program greatly however a lot of times they are not used because a
+            program using this instruction sets is not portable to those CPUs
+            that don’t support them like the old models or CPUs from other
+            brands that supports them but use a different instruction set
+            architecture (ISA). Consequently, we need to use runtime function
+            dispatching to execute the functions using these instructions
+            depending if the hardware supports them and if it does not, execute
+            the version that doesn’t use this instruction sets. This instruction
+            sets are also sometimes avoided because they are not supported on a
+            programming language level, you need to use compiler intrinsics or
+            assembly language to access them. With a program that uses this
+            instruction sets people will be able to enjoy the extra performance
+            that their new hardware supports.
+          </p>
+          <p>
+            Talking about SIMD, most pcs have a coprocessor alongside the CPU
+            designed with this idea in mind called the graphics processing unit
+            (GPU). The main idea of the GPU design that differentiates it with
+            the CPU is to maximize the instruction throughput instead of
+            focusing on instruction latency. On one hand, CPUs dedicates a lot
+            of transistors on its die with caches, branch predictor, out of
+            order execution etc. trying to execute sequences of instructions as
+            fast as possible, leaving them without a lot of space on the die for
+            a lot of execution units(cores). On the other hand, GPUs have a lot
+            of cores to execute a lot of instructions at the same time and a
+            higher memory bandwidth but they don’t have this extra tools and
+            high frequency the CPU has to execute a sequence of instructions as
+            fast as possible. In consequence, GPUs focus on completing the
+            highest number of instructions in a given time excelling at parallel
+            tasks that will take a lot more time to the CPU however, they
+            struggle if the task to perform is not parallelizable. This
+            parallelism makes the GPU very suitable and used for graphics.
+            Although its name (GraphicsPU), it can also be used for other tasks
+            that would greatly benefit from the GPU parallel design against the
+            CPU.
+          </p>
+          <p>
+            In conclusion, I am trying to implement a simple platform layer that
+            could be the base of a game or a game engine using the most modern
+            APIs provided by the platform to see if it enforces the use of any
+            of the mentioned parallel programming techniques. If they are used,
+            we are going to see their exact implementation and it will mean that
+            the industry also considers parallel programming to optimize in
+            games.
+          </p>
+          <h3>Specific objectives</h3>
+          <ul>
+            <li>Use the CUDA platform layer to learn about GPUGP</li>
+            <li></li>
+          </ul>
+        </section>
         <section>
           <h2>继续</h2>
           <p>这是我的第一段落</p>
