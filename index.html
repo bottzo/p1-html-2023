@@ -63,7 +63,7 @@
             processing speed so single thread programs will not be able to take
             advantage of this new hardware and improve much in performance.
           </p>
-          <h3 name = "formulating_the_problem" id = "formulating_the_problem">Formulating the problem</h3>
+          <h3 id="formulating_the_problem">Formulating the problem</h3>
           <p>
             Nowadays, new CPUs and GPUs improve its power not raising the
             instruction processing speed (raising clock frequency) but raising
@@ -200,17 +200,19 @@
           <h2>Project development</h2>
           <h3>GPUGP</h3>
           <p>
-            As mentioned in <a href="#formulating_the_problem">formulating the problem</a> GPUs and CPUs are
-            very different because they are designed with different goals in
-            mind (throughput vs. latency). As they are so different, the first
-            task I carried was learning how a GPU works and how to program it.
-            With that goal in mind I decided that the best way to learn it was
-            to make very simple GPU programs using CUDA. CUDA is a C/C++
-            language extension that allows you to define and execute functions
-            that will run on an nvidia GPU (called kernels). It also provides
-            helper functions to manipulate GPU memory and transferring data
-            between GPU (device) and CPU (host).
+            As mentioned in
+            <a href="#formulating_the_problem">formulating the problem</a>, GPUs
+            and CPUs are very different because they are designed with different
+            goals in mind (throughput vs. latency). As they are so different,
+            the first task I carried was learning how a GPU works and how to
+            program it. With that goal in mind I decided that the best way to
+            learn it was to make very simple GPU programs using CUDA. CUDA is a
+            C/C++ language extension that allows you to define and execute
+            functions that will run on an nvidia GPU (called kernels). It also
+            provides helper functions to manipulate GPU memory and transferring
+            data between GPU (device) and CPU (host).
           </p>
+          <p>The first program I made was the addition of two big vectors.</p>
         </section>
         <section>
           <h2>继续</h2>
