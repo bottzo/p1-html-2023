@@ -147,8 +147,53 @@
           <h3>Specific objectives</h3>
           <ul>
             <li>Use the CUDA platform layer to learn about GPUGP</li>
-            <li></li>
+            <li>
+              Profile how significant the difference is between a parallel
+              algorithm running on the CPU and on the GPU.
+            </li>
+            <li>
+              Optimize a GPU algorithm to fully understand the GPU hardware.
+            </li>
+            <li>
+              Use the latest versions of the DirectX API to construct my windows
+              platform layers.
+            </li>
+            <li>See how DirectX12 implement GPUGP.</li>
+            <li>
+              See what exactly makes DirectX12 so hyped to get better
+              performance than other older APIs like Opengl.
+            </li>
+            <li>
+              See if we find an unknown parallel technique while programing the
+              platform layer.
+            </li>
           </ul>
+          <h3>Project scope</h3>
+          <p>
+            This TFG targets anyone interested in the topic of low level C/C++
+            game and engine development and platform specific optimization
+            targeting mainly pc games on the windows operating system. It also
+            targets people interested in learning GPU programing.
+          </p>
+          <p>
+            For the platform layer, we will try to make it as much complete as
+            possible in order to see more areas of the game where parallel
+            techniques can be used. At least it has to be complete enough to
+            render geometry to the screen, use input, textures and audio Those
+            are the features the majority of games use and that configure the
+            core of the DirectX multimedia libraries that I want to test.
+          </p>
+          <p>
+            For the GPU, the most important thing is to create kernels on CUDA,
+            optimize them and compare them to the CPU times. The number of
+            kernels is not important, what is important is to try to touch the
+            majority of areas of GPU hardware. It will also be interesting to
+            see how different the CUDA kernels are compared to the compute
+            shaders of directX 12.
+          </p>
+          <p>
+            Finally, I will try to see if any of the APIs uses SIMD instructions.
+          </p>
         </section>
         <section>
           <h2>继续</h2>
