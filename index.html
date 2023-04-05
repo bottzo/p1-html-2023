@@ -196,24 +196,234 @@
             instructions.
           </p>
         </section>
-        <section>
-          <h2>Project development</h2>
-          <h3>GPUGP</h3>
-          <p>
-            As mentioned in
-            <a href="#formulating_the_problem">formulating the problem</a>, GPUs
-            and CPUs are very different because they are designed with different
-            goals in mind (throughput vs. latency). As they are so different,
-            the first task I carried was learning how a GPU works and how to
-            program it. With that goal in mind I decided that the best way to
-            learn it was to make very simple GPU programs using CUDA. CUDA is a
-            C/C++ language extension that allows you to define and execute
-            functions that will run on an nvidia GPU (called kernels). It also
-            provides helper functions to manipulate GPU memory and transferring
-            data between GPU (device) and CPU (host).
-          </p>
-          <p>The first program I made was the addition of two big vectors.</p>
-        </section>
+        <main>
+          <section>
+            <h2>Project development</h2>
+            <h3>GPUGP</h3>
+            <p>
+              As mentioned in
+              <a href="#formulating_the_problem">formulating the problem</a>,
+              GPUs and CPUs are very different because they are designed with
+              different goals in mind (throughput vs. latency). As they are so
+              different, the first task I carried was learning how a GPU works
+              and how to program it. With that goal in mind I decided that the
+              best way to learn it was to make very simple GPU programs using
+              CUDA. CUDA is a C/C++ language extension that allows you to define
+              and execute functions that will run on an nvidia GPU (called
+              kernels). It also provides helper functions to manipulate GPU
+              memory and transferring data between GPU (device) and CPU (host).
+            </p>
+            <p>The first program I made was the addition of two big vectors.</p>
+            <pre>
+void addCPU(int* c, const int *a, const int *b, int elementsToAdd)
+{
+  for(int i = 0; i &lt; elementsToAdd; ++i)
+    c[i] = a[i] + b[i];
+}
+          </pre
+            >
+            <p>
+              In a CPU this would be done with a for loop incrementing the index
+              on each iteration and with it accessing an array element by
+              element and performing the addition.
+            </p>
+            <pre>
+__global__ void addKernel(int *c,const int *a, const int *b)
+{
+  int i = threadId.x;
+  c[i] = a[i] + b[i];
+}
+          </pre
+            >
+            <p>
+              This is the kernel (marked as a kernel (GPU function) using the
+              __global__ definition) that makes the addition on the GPU. Notice
+              that we perform the same addition operation that we did on the CPU
+              function but we get rid of the for loop because the entire
+              function will run multiple times in different GPU threads. As the
+              GPU has many more cores than the CPU, all this threads can execute
+              the same instruction on different cores at the same time. This
+              model the GPU uses comes from the SIMD (single instruction
+              multiple data) and is called SIMT (single instruction multiple
+              thread). To run a kernel, the GPU just spawns a lot of threads on
+              different cores and each thread runs the first instruction of the
+              function at the same time, and after the first one the next one
+              and the next one … until the function ends. This way, maybe we are
+              slower to perform each instruction (latency) but when we finish
+              performing it, it is like having performed a lot of instructions
+              (the same instruction performed a lot of times in every different
+              thread) achieving an amazing throughput and parallelism. This is
+              great for certain types of tasks called embarrassingly parallel
+              like this vector addition that perform the same instruction in
+              different data. Notice on the example kernel that we get the index
+              to the array through a magical variable called threadIdx. This
+              threadIdx variable will automatically get set by the runtime to
+              the index of the current thread running this kernel.
+            </p>
+            <p>
+              After the vector addition test I did another test with matrix
+              multiplication. In this test I got introduced to the concept of
+              grids, blocks and thread dimensions.
+            </p>
+            <img src="img/3.png" alt="Grid, block and thread dimensions" />
+            <p>
+              A block is a group of threads and the unit that gets scheduled on
+              the GPU. All the blocks in a kernel form a grid and can be
+              accessed using the blockIdx variable. As the threadIdx variable,
+              it is a 3 dimension variable (x,y,z) because it can be convenient
+              for certain tasks like for example the matrix multiplication to
+              access the data using multiple dimensions.
+            </p>
+            <img src="img/4.png" alt="Streaming multiprocessor" />
+            <p>
+              As mentioned before, the GPU has a lot of cores. All this cores
+              are grouped in different clusters called streaming multiprocessors
+              (SM). Each SM contains cores, a register file with the registers
+              to use for the different cores and cache. To run a certain kernel,
+              the application specifies a grid to the GPU. The GPU then assigns
+              the different blocks to different SM and each block runs until
+              completion. After a block finishes, a SM is freed and another
+              block of threads can get executed on that SM. This way, the more
+              SMs a GPU has the more blocks can run at the same time in parallel
+              and the faster the kernel will complete.
+            </p>
+            <img
+              src="img/5.png"
+              alt="Block execution depending on device SMs"
+            />
+            <img src="img/6.jpg" alt="Nvidia GPU architecture" />
+            <p>
+              Because of its design, GPUs theoretically can carry parallel tasks
+              a lot faster than CPUs. To see if this is true I also created two
+              programs that do exactly the same task and use the same algorithm
+              but one with the CPU and the other with the GPU. Like this, I am
+              able to benchmark both and compare how significant the difference
+              in performance is. The program is about image processing. It
+              consists on a simple console app that receives an image and
+              outputs the same image but in black and white. The task is
+              embarrassingly parallel because it fits with the SIMD model
+              commented before as we perform the same operation on each texel of
+              the texture. Consequently, I expect it to run much faster on the
+              GPU than on the CPU.
+            </p>
+            <pre>
+for (unsigned char *p = img, *pg = gray_img; p != img + img_size; p+= channels, pg += gray_channels)
+  -pg = (unsigned char)(((*p) * 0.299f + (*(p + 1)) * (*(p + 2)) * 0.114f));
+          </pre
+            >
+            <pre>
+__global__ void RGBToGrayScale(const uchar3 *const colorPixels, unsigned char *grayPixels, int rowElements, int colElements)
+{
+  int y = threadIdx.y + blockIdx.y * blockDim.y;
+  int x = threadIdx.x + blockIdx.x * blockDim.x;
+  if (y &lt; colElements && x &lt; rowElements)
+  {
+    int index = y * rowElements + x;
+    grayPixels[index] = 0.299f * colorPixels[index].x + 0.587f * colorPixels[index].y + 0.114f * colorPixels[index].z;
+  } 
+}
+          </pre
+            >
+            <p>
+              To time both functions I used the QueryPerformanceCounter() and
+              QueryPerformanceFrequency() from the Windows API. I also used
+              Nvidia Nsight Compute to get a more accurate time for the GPU
+              kernel. The test was run on an intel i7-10700k CPU and a Nvidia
+              RTX 2080 Super GPU and I used a (3840x2160)4k and (7680 × 4320)8k
+              resolution textures.
+            </p>
+            <img src="img/9.jpg" alt="4k original image" />
+            <img src="img/10.jpg" alt="4k black and white result image" />
+            <img src="img/11.jpg" alt="8k original image" />
+            <img src="img/12.jpg" alt="8k black and white result image" />
+            <p>
+              As expected, the GPU was A LOT faster than the CPU. For the 4k
+              texture test, while the CPU took 13 ms on average the GPU only
+              needed 0.3 ms on average to complete the same task (0.12915ms on
+              Nsight compute). Continuing with the 8k texture test, the
+              difference was even bigger. The CPU required 53 ms on average to
+              complete the task while the GPU just needed 0.62 ms to complete it
+              (0.50531ms on nsight compute).
+            </p>
+            <p>
+              A game has to run at high frames rates if it wants the user to not
+              perceive the visual lag between the frames and also to maintain it
+              responsive to user input. The old standard to make a game playable
+              is 30 fps. Going below that can be noticeable and frustrating to
+              most players. If we want to target that bare minimum of 30 fps we
+              have 33,33 ms to compute each frame. Otherwise, if we target a
+              more acceptable frame rate nowadays like 60 fps we need to compute
+              each frame in 16,66 ms. If for example we want to use a black and
+              white filter when the player is low on health we could use our
+              algorithm on a post processing effect, once the frame has been
+              computed, to turn the output texture to black and white. On one
+              hand, if that output texture is 4k, it would take 13 ms to compute
+              that algorithm on the CPU. Consequently, half of the frame time at
+              30 fps and nearly all the time at 60 fps would be spent computing
+              the task. Moreover, if this output texture is 8k it takes 53 ms,
+              making the task unachievable even at 30 fps because it nearly
+              doubles the 33,33 ms mark. On the other hand, with the GPU times,
+              the task becomes totally feasible at 4k and also at 8k even at
+              higher frame rates.
+            </p>
+            <p>
+              The last test I did with CUDA was to try out the shared memory.
+              Each streaming multiprocessor (SM) has shared memory, which is
+              cache memory close to the cores but that can be accessed by the
+              programmer. Contrary to the CPU, here we can take a portion of the
+              cache and declare it as shared memory. It is very useful to avoid
+              a lot of reads to slow main GPU memory, however, all the data we
+              load on the shared memory can only be shared between the threads
+              of the same block because blocks are what get scheduled to run on
+              the different SMs, each one with its cache. In this test I
+              performed a Gaussian blur on an image. To perform a Gaussian blur
+              each texture texel final color is the average of the sum of all
+              the surrounding texels.
+            </p>
+            <pre>
+__global__ void ChannelUnweightedImageBlurQuad(const unsigned char *const colorPixels, unsigned char *bluredPixels, int rowElements, int columnElemens, int quadDim)
+{
+  int x = blockIdx.x * blockDim.x + threadIdx.x;
+  int y = blockIdx.y * blockDim.y + threadIdx.y;
+  gidx = y * rowElements + x;
+  int cacheX = x - (blockIdx.x * blockDim.y) + quadDim;
+  int cacheY = y - (blockIdx.y * blockDim.y) + quadDim;
+  int cacheDimX = (blockDim.x + quadDim * 2);
+  int cacheIdx = cacheY * cacheDimX + cacheX;
+  //extern __shared__ to allocate the shared memory size at lunch time with the parametersof the grid and block sizes 
+  extern __shared__ unsigned char cache[];
+  cache[cacheIdx] = colorPixels[gidx];
+  if (threadIdx.y == 0)
+  {
+    //if (blockIdx.y != 0)
+    for(int i = 1; i &lt;= quadDim; ++i)
+      if((gidx - rowElements * i) &gt;= 0)
+        cache[cacheIdx - cacheDimX * i] = colorPixels[gidx - rowElements * i];
+      else 
+        cache[cacheIdx - cacheDimX * i] = 255;
+  }
+  else if (threadIdx.y == (blockDim.y - 1))
+  {
+    //if (blockIdx.y != 0)
+    for(int i = 1; i &lt;= quadDim; ++i)
+      if((gidx + rowElements * i) &lt;= 0)
+        cache[cacheIdx - cacheDimX * i] = colorPixels[gidx - rowElements * i];
+      else 
+        cache[cacheIdx + cacheDimX * i] = 255;
+  }
+  if (threadIdx.x == 0)
+  {
+    //if (blockIdx.y != 0)
+    for(int i = 1; i &lt;= quadDim; ++i)
+      if((gidx - i) &gt;= 0)
+        cache[cacheIdx - i] = colorPixels[gidx - i];
+      else 
+        cache[cacheIdx - i] = 255;
+  }
+}
+            </pre>
+          </section>
+        </main>
         <section>
           <h2>继续</h2>
           <p>这是我的第一段落</p>
